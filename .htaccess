@@ -1,0 +1,14 @@
+RewriteEngine On
+
+# ─── Redirect all traffic to index.php ───
+# (except admin.php and existing files like CSS/JS/images)
+
+# If the requested file or directory exists, serve it directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Skip admin.php from rewriting
+RewriteCond %{REQUEST_URI} !^/admin\.php
+
+# Route everything else through index.php
+RewriteRule ^(.*)$ index.php [QSA,L]

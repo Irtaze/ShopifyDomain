@@ -1,0 +1,13 @@
+# Database (auto-created on first run)
+database/store.db
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Playwright test artifacts
+.playwright-mcp/
