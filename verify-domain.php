@@ -1,36 +1,55 @@
 <?php
-/**
- * Domain Verification API
- * Quick AJAX endpoint to check if a domain points to the server.
- * 
- * Usage: verify-domain.php?domain=mystore.com
- */
 
-require_once __DIR__ . '/includes/Store.php';
+declare(strict_types=1);
+
+require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/middleware/tenant.php';
+require_once __DIR__ . '/includes/security.php';
+require_once __DIR__ . '/models/Domain.php';
 
 header('Content-Type: application/json');
 
-$domain = trim($_GET['domain'] ?? '');
-
-if (empty($domain)) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'No domain provided'
-    ]);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
     exit;
 }
 
-// Clean the domain
-$domain = strtolower(preg_replace('/^https?:\/\//', '', $domain));
-$domain = rtrim($domain, '/');
+csrf_verify_or_fail();
 
-$storeModel = new Store();
-$result = $storeModel->verifyDomain($domain);
+$domain = strtolower(trim((string) ($_POST['domain'] ?? '')));
+$domain = preg_replace('/^https?:\/\//', '', $domain);
+$domain = rtrim($domain, '/');
+$domain = preg_replace('/:\d+$/', '', $domain);
+
+if ($domain === '') {
+    echo json_encode(['success' => false, 'message' => 'Domain is required']);
+    exit;
+}
+
+$tenantId = current_tenant_id();
+$domainModel = new Domain();
+
+if (!$domainModel->belongsToTenant($tenantId, $domain)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Domain does not belong to current tenant']);
+    exit;
+}
+
+$resolvedIp = gethostbyname($domain);
+$allowedIps = array_map('trim', explode(',', SERVER_IPS));
+$isVerified = in_array($resolvedIp, $allowedIps, true);
+
+if ($isVerified) {
+    $domainModel->markVerifiedForTenant($tenantId, $domain);
+}
 
 echo json_encode([
-    'success'     => $result['is_verified'],
-    'domain'      => $result['domain'],
-    'resolved_ip' => $result['resolved_ip'],
-    'expected_ip' => $result['server_ip'],
-    'message'     => $result['message']
+    'success' => $isVerified,
+    'domain' => $domain,
+    'resolved_ip' => $resolvedIp,
+    'expected_ip' => SERVER_IP,
+    'message' => $isVerified
+        ? 'Domain is correctly pointing to your server.'
+        : 'Domain DNS does not match the configured server IP.',
 ]);
