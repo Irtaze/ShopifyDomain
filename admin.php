@@ -168,6 +168,7 @@ $domains = $domainModel->allForTenant($tenantId);
                 </div>
             </form>
             <p>DNS setup: Add an <strong>A</strong> record for your domain and point it to this server IP: <strong><?= e((string) $runtimeServerIp) ?></strong> (configured target: <strong><?= e(SERVER_IP) ?></strong>).</p>
+            <p>DNS setup: Add an <strong>WWW</strong> record for your domain and point it to this server IP: <strong><?= e((string) $runtimeServerIp) ?></strong> (configured target: <strong><?= e(SERVER_IP) ?></strong>).</p>
         </div>
 
         <div class="card">
