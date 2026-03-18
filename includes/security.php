@@ -1,5 +1,5 @@
 <?php
-
+/// Security-related functions, including CSRF protection and output escaping.
 declare(strict_types=1);
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
